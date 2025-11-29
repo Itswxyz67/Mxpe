@@ -3,15 +3,16 @@ const { chromium } = require('playwright');
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage();
-  await page.goto('http://quotes.toscrape.com');
+  await page.goto('https://animepahe.si/');
 
-  const quotes = await page.$$('.quote');
+  // Wait for the episode list to be populated
+  await page.waitForSelector('.episode-wrap');
 
-  for (const quote of quotes) {
-    const text = await quote.$eval('.text', (el) => el.innerText);
-    const author = await quote.$eval('.author', (el) => el.innerText);
-    console.log(`"${text}" - ${author}`);
-  }
+  const titles = await page.$$eval('.episode-title a', (links) =>
+    links.map((link) => link.getAttribute('title'))
+  );
+
+  titles.forEach((title) => console.log(title));
 
   await browser.close();
 })();
