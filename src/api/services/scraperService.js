@@ -1,15 +1,12 @@
 const { chromium } = require('playwright');
 
-// Function to create a random delay
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-(async () => {
+async function scrapeEpisode(episodeUrl) {
   let browser;
   try {
-    const episodeUrl = process.argv[2];
     if (!episodeUrl || !episodeUrl.startsWith('https://animepahe.si/play/')) {
-      console.error("Please provide a valid animepahe.si episode URL.");
-      return;
+      throw new Error("Invalid animepahe.si episode URL.");
     }
 
     browser = await chromium.launch({ headless: true });
@@ -19,7 +16,6 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
     });
 
     const page = await context.newPage();
-    console.log(`--- Scraping Episode: ${episodeUrl} ---`);
     await page.goto(episodeUrl);
 
     await page.waitForSelector('.click-to-load');
@@ -37,20 +33,23 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
       links.map((link) => {
         const text = link.innerText.trim();
         const url = link.getAttribute('href');
-        return `${text}: ${url}`;
+        return { text, url };
       })
     );
 
-    console.log(`\nServer: ${serverInfo}`);
-    console.log(`Iframe Src: ${iframeSrc}`);
-    console.log("\n--- Available Download Links ---");
-    downloadLinks.forEach((link) => console.log(link));
+    return {
+      server: serverInfo,
+      iframeSrc: iframeSrc,
+      downloads: downloadLinks
+    };
 
-  } catch (error) {
-    console.error("Scraping failed:", error);
   } finally {
     if (browser) {
       await browser.close();
     }
   }
-})();
+}
+
+module.exports = {
+  scrapeEpisode
+};
